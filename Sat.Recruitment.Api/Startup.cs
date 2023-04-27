@@ -1,15 +1,13 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Sat.Recruitment.Service;
+using Serilog.Configuration;
+using Serilog;
+using Sat.Recruitment.DataAccess.Repository;
+using Sat.Recruitment.DataAccess;
 
 namespace Sat.Recruitment.Api
 {
@@ -18,6 +16,11 @@ namespace Sat.Recruitment.Api
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+
+            Log.Logger = new LoggerConfiguration()
+                  .MinimumLevel.Debug()
+                  .WriteTo.File("logs/Sat.Recruitment.txt", rollingInterval: RollingInterval.Day)
+                  .CreateLogger();
         }
 
         public IConfiguration Configuration { get; }
@@ -27,6 +30,10 @@ namespace Sat.Recruitment.Api
         {
             services.AddControllers();
             services.AddSwaggerGen();
+
+            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<Data>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -42,8 +49,11 @@ namespace Sat.Recruitment.Api
             // specifying the Swagger JSON endpoint.
             app.UseSwaggerUI(c =>
             {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Sat Recruitment API");
             });
+
+            app.ConfigureExceptionHandler();
+
             app.UseRouting();
 
             app.UseAuthorization();
